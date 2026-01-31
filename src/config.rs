@@ -69,8 +69,6 @@ impl Config {
             .build()
             .context("无法读取配置文件")?;
 
-        let config: Config = config.try_deserialize().context("配置文件格式错误")?;
-
-        Ok(config)
+        config.try_deserialize().context("配置文件格式错误")
     }
 }

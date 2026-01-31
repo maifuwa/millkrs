@@ -1,2 +1,5 @@
 /target
 config.toml
+system_prompt
+*.db
+*.db-wal

@@ -1,21 +1,25 @@
 mod config;
+mod db;
 
 use anyhow::Result;
 use config::Config;
+use db::service::UserService;
 use log::{LevelFilter, info};
 use milky_rust_sdk::logger;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     logger::init_logger(Some(LevelFilter::Info));
-    // 初始化配置
+
     let config = Config::init()?;
 
-    info!("配置加载成功！");
-    info!("Bot 端点: {}", config.bot.endpoint);
-    info!("数据库: {}", config.database.url);
+    info!("正在初始化数据库: {}", config.database.url);
+    let pool = db::init_db(&config.database.url).await?;
+    info!("数据库初始化成功");
 
-    // TODO: 启动 QQ Bot 和其他服务
+    // 创建用户服务实例
+    let _user_service = UserService::new(pool);
+    info!("用户服务初始化成功");
 
     Ok(())
 }
