@@ -30,7 +30,7 @@ impl UserRelation {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct User {
-    pub id: String,
+    pub id: i64,
     pub name: String,
     pub relation: UserRelation,
     pub custom_prompt: Option<String>,
@@ -40,25 +40,25 @@ pub struct User {
 
 #[derive(Debug, Clone)]
 pub struct CreateUserRequest {
-    pub id: String,
+    pub id: i64,
     pub name: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct CreateMasterRequest {
-    pub id: String,
+    pub id: i64,
     pub name: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct CreateCustomPromptRequest {
-    pub id: String,
+    pub id: i64,
     pub custom_prompt: String,
 }
 
 #[derive(Debug, Clone)]
 pub struct UpdateUserRequest {
-    pub operator_id: String,
-    pub user_id: String,
+    pub operator_id: i64,
+    pub user_id: i64,
     pub relation: UserRelation,
 }

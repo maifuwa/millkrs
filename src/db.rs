@@ -29,7 +29,7 @@ pub async fn init_db(database_url: &str) -> Result<SqlitePool> {
     sqlx::query(
         r#"
         CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY NOT NULL,
+            id INTEGER PRIMARY KEY NOT NULL,
             name TEXT NOT NULL,
             relation TEXT NOT NULL DEFAULT 'friend' CHECK(relation IN ('master', 'friend', 'stranger')),
             custom_prompt TEXT,
