@@ -1,0 +1,16 @@
+# Bot 配置
+[bot]
+endpoint = "wss://your-bot-endpoint"
+access_token = "your-access-token"
+
+# AI 模型配置
+[rig]
+token = "your-deepseek-api-token"
+
+# 搜索配置
+[search]
+serpapi_key = "your-serpapi-key"
+
+# 数据库配置
+[database]
+url = "sqlite://data.db"
