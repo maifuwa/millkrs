@@ -63,7 +63,7 @@ impl UserService {
             .ok_or_else(|| anyhow!("更新用户为 master 后无法查询到用户"))
     }
 
-    pub async fn get_user(&self, user_id: i64) -> Result<Option<User>> {
+    async fn get_user(&self, user_id: i64) -> Result<Option<User>> {
         debug!("查询用户: id={}", user_id);
 
         let row = sqlx::query_as::<_, (i64, String, String, Option<String>, String, String)>(
@@ -152,7 +152,7 @@ impl UserService {
             .ok_or_else(|| anyhow!("更新自定义提示词后无法查询到用户"))
     }
 
-    pub async fn is_master(&self, user_id: i64) -> Result<bool> {
+    async fn is_master(&self, user_id: i64) -> Result<bool> {
         debug!("检查是否为 master: id={}", user_id);
 
         let user = self.get_user(user_id).await?;
@@ -164,7 +164,7 @@ impl UserService {
         Ok(is_master)
     }
 
-    pub async fn has_master(&self) -> Result<bool> {
+    async fn has_master(&self) -> Result<bool> {
         debug!("检查是否存在 master 用户");
 
         let result = sqlx::query_scalar::<_, bool>(

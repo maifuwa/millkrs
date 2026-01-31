@@ -1,30 +1,37 @@
+use crate::agent::Agent;
 use crate::db::model::CreateUserRequest;
 use crate::db::service::UserService;
-use anyhow::Result;
+use crate::utils::send_message;
+use anyhow::{Result, anyhow};
 use log::{error, info};
 use milky_rust_sdk::MilkyClient;
-use milky_rust_sdk::prelude::{IncomingSegment, MessageEvent, OutgoingSegment, TextData};
+use milky_rust_sdk::prelude::MessageEvent;
+use milky_rust_sdk::utils::get_plain_text_from_segments;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct MessageHandler {
     user_service: UserService,
     client: Arc<MilkyClient>,
+    agent: Arc<Agent>,
 }
 
 impl MessageHandler {
-    pub fn new(user_service: UserService, client: Arc<MilkyClient>) -> Self {
+    pub fn new(user_service: UserService, client: Arc<MilkyClient>, agent: Arc<Agent>) -> Self {
         Self {
             user_service,
             client,
+            agent,
         }
     }
 
     pub async fn handle(&self, message: MessageEvent) {
+        let sender = message.base_message().sender_id;
         match message {
             MessageEvent::Friend(msg) => match self.handle_friend_message(msg).await {
                 Err(e) => {
-                    error!("{e}")
+                    error!("{e}");
+                    let _ = send_message(self.client.clone(), sender, vec![e.to_string()]).await;
                 }
                 Ok(_) => {}
             },
@@ -49,21 +56,12 @@ impl MessageHandler {
             .create_user(CreateUserRequest { id, name })
             .await?;
 
-        let segments: Vec<OutgoingSegment> = msg
-            .message
-            .segments
-            .into_iter()
-            .filter_map(|seg| match seg {
-                IncomingSegment::Text { text } => Some(OutgoingSegment::Text(TextData { text })),
-                _ => None,
-            })
-            .collect();
+        let text_content = get_plain_text_from_segments(&msg.message.segments);
 
-        if !segments.is_empty() {
-            if let Err(e) = self.client.send_private_message(user.id, segments).await {
-                error!("发送私聊消息失败: {}", e);
-            } else {
-                info!("成功复读好友消息");
+        match self.agent.chat(&user, &text_content).await {
+            Ok(response) => send_message(self.client.clone(), user.id, vec![response]).await,
+            Err(e) => {
+                return Err(anyhow!("AI处理消息失败: {}", e));
             }
         }
 

@@ -1,7 +1,8 @@
+use crate::agent::Agent;
 use crate::db::service::UserService;
 use log::warn;
-use milky_rust_sdk::prelude::{Event, EventKind};
 use milky_rust_sdk::MilkyClient;
+use milky_rust_sdk::prelude::{Event, EventKind};
 use std::sync::Arc;
 
 use super::message_handler::MessageHandler;
@@ -12,9 +13,9 @@ pub struct Handler {
 }
 
 impl Handler {
-    pub fn new(user_service: UserService, client: Arc<MilkyClient>) -> Self {
+    pub fn new(user_service: UserService, client: Arc<MilkyClient>, agent: Arc<Agent>) -> Self {
         Self {
-            message_handler: MessageHandler::new(user_service, client),
+            message_handler: MessageHandler::new(user_service, client, agent),
         }
     }
 

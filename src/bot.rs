@@ -1,6 +1,7 @@
 mod handler;
 mod message_handler;
 
+use crate::agent::Agent;
 use crate::config::Config;
 use crate::db::service::UserService;
 use anyhow::{Result, bail};
@@ -34,7 +35,8 @@ impl Bot {
 
         info!("成功链接到Milky事件流");
 
-        let handler = Handler::new(user_service, Arc::clone(&client));
+        let agent = Arc::new(Agent::new(&config.llm)?);
+        let handler = Handler::new(user_service, Arc::clone(&client), agent);
 
         Ok(Self {
             client,

@@ -1,17 +1,19 @@
+mod agent;
 mod bot;
 mod config;
 mod db;
+mod utils;
 
 use anyhow::Result;
 use bot::Bot;
 use config::Config;
 use db::service::UserService;
-use log::{LevelFilter, info, debug};
+use log::{LevelFilter, debug, info};
 use milky_rust_sdk::logger;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    logger::init_logger(Some(LevelFilter::Info));
+    logger::init_logger(Some(LevelFilter::Debug));
 
     let config = Config::init()?;
 

@@ -6,7 +6,7 @@ use std::path::Path;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
     pub bot: BotConfig,
-    pub rig: RigConfig,
+    pub llm: LLMConfig,
     pub search: SearchConfig,
     pub database: DatabaseConfig,
 }
@@ -18,8 +18,19 @@ pub struct BotConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct RigConfig {
+pub struct LLMConfig {
+    pub base_url: String,
     pub token: String,
+    pub model_name: String,
+    pub temperature: f64,
+    system_prompt: String,
+}
+
+impl LLMConfig {
+    pub fn system_prompt(&self) -> Result<String> {
+        fs::read_to_string(&self.system_prompt)
+            .with_context(|| format!("无法读取 system_prompt 文件: {}", self.system_prompt))
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -39,8 +50,12 @@ impl Config {
                 endpoint: "wss://your-bot-endpoint".to_string(),
                 access_token: "your-access-token".to_string(),
             },
-            rig: RigConfig {
-                token: "your-deepseek-api-token".to_string(),
+            llm: LLMConfig {
+                base_url: "your-model-base-url".to_string(),
+                token: "your-model-api-token".to_string(),
+                model_name: "your-model-name".to_string(),
+                temperature: 0.7,
+                system_prompt: "system_prompt".to_string(),
             },
             search: SearchConfig {
                 serpapi_key: "your-serpapi-key".to_string(),

@@ -4,8 +4,12 @@ endpoint = "wss://your-bot-endpoint"
 access_token = "your-access-token"
 
 # AI 模型配置
-[rig]
-token = "your-deepseek-api-token"
+[llm]
+base_url = "your-model-base-url"
+token = "your-model-api-token"
+model_name = "your-model-name"
+temperature = 0.7
+system_prompt = "system_prompt"
 
 # 搜索配置
 [search]
