@@ -7,9 +7,8 @@ pub async fn send_message(milky_client: Arc<MilkyClient>, sender: i64, messages:
     for msg in messages {
         let segments = vec![OutgoingSegment::Text(TextData { text: msg })];
 
-        match milky_client.send_private_message(sender, segments).await {
-            Err(e) => error!("发送私聊消息失败: {}", e),
-            Ok(_) => (),
+        if let Err(e) = milky_client.send_private_message(sender, segments).await {
+            error!("发送私聊消息失败: {}", e);
         }
     }
 }

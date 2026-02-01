@@ -1,7 +1,6 @@
 use crate::agent::Agent;
 use crate::db::model::User;
 use anyhow::Result;
-use milky_rust_sdk::MilkyClient;
 use std::sync::Arc;
 
 #[derive(Clone)]

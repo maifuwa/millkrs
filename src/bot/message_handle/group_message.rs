@@ -1,11 +1,12 @@
 use anyhow::Result;
-use milky_rust_sdk::MilkyClient;
 use log::info;
+use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::GroupMessage;
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct GroupMessageHandler {
+    #[allow(dead_code)]
     client: Arc<MilkyClient>,
 }
 

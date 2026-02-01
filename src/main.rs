@@ -9,7 +9,7 @@ use anyhow::Result;
 use bot::Bot;
 use config::Config;
 use db::service::UserService;
-use log::{debug, info, LevelFilter};
+use log::{LevelFilter, debug, info};
 use milky_rust_sdk::logger;
 use milky_rust_sdk::prelude::Event;
 use milky_rust_sdk::{Communication, MilkyClient, WebSocketConfig};
@@ -31,7 +31,10 @@ async fn main() -> Result<()> {
         config.bot.endpoint.clone(),
         Option::from(config.bot.access_token.clone()),
     );
-    let client = Arc::new(MilkyClient::new(Communication::WebSocket(ws_config), event_tx)?);
+    let client = Arc::new(MilkyClient::new(
+        Communication::WebSocket(ws_config),
+        event_tx,
+    )?);
     debug!("MilkyClient 初始化成功");
 
     let agent = Arc::new(Agent::new(&config.llm, Arc::clone(&client))?);

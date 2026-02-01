@@ -106,7 +106,7 @@ impl UserService {
             req.operator_id, req.user_id, req.relation
         );
 
-        if self.is_master(req.operator_id).await? == false {
+        if !self.is_master(req.operator_id).await? {
             debug!("操作者不是 master，无权限修改用户关系");
             return Err(anyhow!("只有 master 用户才能修改用户关系"));
         }
