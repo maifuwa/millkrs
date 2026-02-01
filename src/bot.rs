@@ -8,7 +8,7 @@ use anyhow::{bail, Result};
 use event_handle::Handler;
 use log::{debug, error, info};
 use milky_rust_sdk::prelude::Event;
-use milky_rust_sdk::{Communication, MilkyClient, WebSocketConfig};
+use milky_rust_sdk::MilkyClient;
 use std::sync::Arc;
 use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
@@ -24,16 +24,10 @@ impl Bot {
     pub async fn new(
         bot_config: &BotConfig,
         user_service: UserService,
+        client: Arc<MilkyClient>,
+        event_rx: mpsc::Receiver<Event>,
         agent: Arc<Agent>,
     ) -> Result<Self> {
-        let (event_tx, event_rx) = mpsc::channel::<Event>(bot_config.event_channel_capacity);
-        let ws_config = WebSocketConfig::new(
-            bot_config.endpoint.clone(),
-            Option::from(bot_config.access_token.clone()),
-        );
-        let client = MilkyClient::new(Communication::WebSocket(ws_config), event_tx)?;
-        let client = Arc::new(client);
-
         if let Err(e) = client.connect_events().await {
             bail!("未能连接到事件流: {e}");
         }

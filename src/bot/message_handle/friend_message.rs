@@ -26,7 +26,7 @@ impl FriendMessageHandler {
         Self {
             user_service: user_service.clone(),
             command_handler: FriendCommandHandler::new(user_service, Arc::clone(&client)),
-            chat_handler: FriendChatHandler::new(client, agent),
+            chat_handler: FriendChatHandler::new(agent),
         }
     }
 

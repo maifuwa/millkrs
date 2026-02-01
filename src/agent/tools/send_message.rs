@@ -1,0 +1,92 @@
+use milky_rust_sdk::MilkyClient;
+use milky_rust_sdk::prelude::{OutgoingSegment, TextData};
+use rig::completion::ToolDefinition;
+use rig::tool::Tool;
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use std::sync::Arc;
+
+#[derive(Deserialize)]
+pub struct SendMessageArgs {
+    pub user_id: i64,
+    pub messages: Vec<String>,
+}
+
+#[derive(Serialize)]
+pub struct SendMessageResult {
+    pub success: bool,
+    pub sent_count: usize,
+}
+
+#[derive(Debug, thiserror::Error)]
+#[error("Send message error: {0}")]
+pub struct SendMessageError(String);
+
+pub struct SendMessage {
+    client: Arc<MilkyClient>,
+}
+
+impl SendMessage {
+    pub fn new(client: Arc<MilkyClient>) -> Self {
+        Self { client }
+    }
+}
+
+impl Tool for SendMessage {
+    const NAME: &'static str = "send_message";
+    type Error = SendMessageError;
+    type Args = SendMessageArgs;
+    type Output = SendMessageResult;
+
+    async fn definition(&self, _prompt: String) -> ToolDefinition {
+        ToolDefinition {
+            name: Self::NAME.to_string(),
+            description: "发送一条或多条消息给用户。可以用于主动与用户聊天、分多次回复长内容、或者在执行任务过程中向用户报告进度。messages参数是一个字符串数组，每个字符串会作为单独的一条消息发送。".to_string(),
+            parameters: json!({
+                "type": "object",
+                "properties": {
+                    "user_id": {
+                        "type": "integer",
+                        "description": "接收消息的用户ID"
+                    },
+                    "messages": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "要发送的消息列表，每条消息会单独发送"
+                    }
+                },
+                "required": ["user_id", "messages"]
+            }),
+        }
+    }
+
+    async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+        let mut sent_count = 0;
+
+        for msg in args.messages {
+            let segments = vec![OutgoingSegment::Text(TextData { text: msg })];
+
+            match self
+                .client
+                .send_private_message(args.user_id, segments)
+                .await
+            {
+                Ok(_) => sent_count += 1,
+                Err(e) => {
+                    return Err(SendMessageError(format!(
+                        "发送第{}条消息失败: {}",
+                        sent_count + 1,
+                        e
+                    )));
+                }
+            }
+        }
+
+        Ok(SendMessageResult {
+            success: true,
+            sent_count,
+        })
+    }
+}
