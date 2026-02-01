@@ -2,6 +2,8 @@
 [bot]
 endpoint = "wss://your-bot-endpoint"
 access_token = "your-access-token"
+event_channel_capacity = 100
+max_concurrent_tasks = 50
 
 # AI 模型配置
 [llm]
@@ -18,3 +20,4 @@ serpapi_key = "your-serpapi-key"
 # 数据库配置
 [database]
 url = "sqlite://data.db"
+max_connections = 5

@@ -131,19 +131,16 @@ impl UserService {
             req.custom_prompt.len()
         );
 
-        sqlx::query(
-            r#"
-           INSERT INTO users (id ,custom_prompt)
-           VALUES (?, ?)
-           ON CONFLICT(id) DO UPDATE SET
-               custom_prompt = ?
-           "#,
-        )
-        .bind(req.id)
-        .bind(&req.custom_prompt)
-        .bind(&req.custom_prompt)
-        .execute(&self.pool)
-        .await?;
+        let rows_affected = sqlx::query("UPDATE users SET custom_prompt = ? WHERE id = ?")
+            .bind(&req.custom_prompt)
+            .bind(req.id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        if rows_affected == 0 {
+            return Err(anyhow!("用户 ID {} 不存在", req.id));
+        }
 
         debug!("自定义提示词更新成功: id={}", req.id);
 

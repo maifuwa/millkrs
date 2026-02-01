@@ -15,6 +15,18 @@ pub struct Config {
 pub struct BotConfig {
     pub endpoint: String,
     pub access_token: String,
+    #[serde(default = "default_event_channel_capacity")]
+    pub event_channel_capacity: usize,
+    #[serde(default = "default_max_concurrent_tasks")]
+    pub max_concurrent_tasks: usize,
+}
+
+fn default_event_channel_capacity() -> usize {
+    100
+}
+
+fn default_max_concurrent_tasks() -> usize {
+    50
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -41,6 +53,12 @@ pub struct SearchConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseConfig {
     pub url: String,
+    #[serde(default = "default_max_connections")]
+    pub max_connections: u32,
+}
+
+fn default_max_connections() -> u32 {
+    5
 }
 
 impl Config {
@@ -49,6 +67,8 @@ impl Config {
             bot: BotConfig {
                 endpoint: "wss://your-bot-endpoint".to_string(),
                 access_token: "your-access-token".to_string(),
+                event_channel_capacity: default_event_channel_capacity(),
+                max_concurrent_tasks: default_max_concurrent_tasks(),
             },
             llm: LLMConfig {
                 base_url: "your-model-base-url".to_string(),
@@ -62,6 +82,7 @@ impl Config {
             },
             database: DatabaseConfig {
                 url: "sqlite://data.db".to_string(),
+                max_connections: default_max_connections(),
             },
         }
     }

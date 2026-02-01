@@ -1,11 +1,12 @@
 use crate::agent::Agent;
 use crate::db::service::UserService;
+use anyhow::Result;
 use log::warn;
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::{Event, EventKind};
 use std::sync::Arc;
 
-use super::message_handler::MessageHandler;
+use super::message_handle::MessageHandler;
 
 #[derive(Clone)]
 pub struct Handler {
@@ -19,14 +20,15 @@ impl Handler {
         }
     }
 
-    pub async fn handle_event(&self, event: Event) {
+    pub async fn handle_event(&self, event: Event) -> Result<()> {
         match event.kind {
             EventKind::MessageReceive { message } => {
-                self.message_handler.handle(message).await;
+                self.message_handler.handle(message).await?;
             }
             _ => {
                 warn!("未处理的事件类型");
             }
         }
+        Ok(())
     }
 }

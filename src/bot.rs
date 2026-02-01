@@ -1,30 +1,35 @@
-mod handler;
-mod message_handler;
+mod event_handle;
+mod message_handle;
 
 use crate::agent::Agent;
-use crate::config::Config;
+use crate::config::BotConfig;
 use crate::db::service::UserService;
-use anyhow::{Result, bail};
-use handler::Handler;
+use anyhow::{bail, Result};
+use event_handle::Handler;
 use log::{debug, error, info};
 use milky_rust_sdk::prelude::Event;
 use milky_rust_sdk::{Communication, MilkyClient, WebSocketConfig};
 use std::sync::Arc;
-use tokio::sync::{mpsc, oneshot};
+use tokio::sync::{mpsc, oneshot, Semaphore};
 use tokio::task::{JoinHandle, JoinSet};
 
 pub struct Bot {
     client: Arc<MilkyClient>,
     event_rx: mpsc::Receiver<Event>,
     handler: Handler,
+    max_concurrent_tasks: usize,
 }
 
 impl Bot {
-    pub async fn new(config: &Config, user_service: UserService) -> Result<Self> {
-        let (event_tx, event_rx) = mpsc::channel::<Event>(100);
+    pub async fn new(
+        bot_config: &BotConfig,
+        user_service: UserService,
+        agent: Arc<Agent>,
+    ) -> Result<Self> {
+        let (event_tx, event_rx) = mpsc::channel::<Event>(bot_config.event_channel_capacity);
         let ws_config = WebSocketConfig::new(
-            config.bot.endpoint.clone(),
-            Option::from(config.bot.access_token.clone()),
+            bot_config.endpoint.clone(),
+            Option::from(bot_config.access_token.clone()),
         );
         let client = MilkyClient::new(Communication::WebSocket(ws_config), event_tx)?;
         let client = Arc::new(client);
@@ -35,13 +40,13 @@ impl Bot {
 
         info!("成功链接到Milky事件流");
 
-        let agent = Arc::new(Agent::new(&config.llm)?);
         let handler = Handler::new(user_service, Arc::clone(&client), agent);
 
         Ok(Self {
             client,
             event_rx,
             handler,
+            max_concurrent_tasks: bot_config.max_concurrent_tasks,
         })
     }
 
@@ -50,6 +55,8 @@ impl Bot {
         let (shutdown_tx, mut shutdown_rx) = oneshot::channel();
 
         let handler = self.handler.clone();
+        let semaphore = Arc::new(Semaphore::new(self.max_concurrent_tasks));
+
         let event_task = tokio::spawn(async move {
             let _ = ready_tx.send(());
 
@@ -65,9 +72,27 @@ impl Bot {
                         match event {
                             Some(event) => {
                                 debug!("收到事件： {event:?}");
+
+                                let permit = match semaphore.clone().try_acquire_owned() {
+                                    Ok(permit) => permit,
+                                    Err(_) => {
+                                        error!("任务队列已满，等待空闲槽位");
+                                        match semaphore.clone().acquire_owned().await {
+                                            Ok(permit) => permit,
+                                            Err(e) => {
+                                                error!("获取任务槽位失败: {e}");
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                };
+
                                 let handler = handler.clone();
                                 join_set.spawn(async move {
-                                    handler.handle_event(event).await;
+                                    let _permit = permit;
+                                    if let Err(e) = handler.handle_event(event).await {
+                                        error!("事件处理失败: {e}");
+                                    }
                                 });
                             }
                             None => {

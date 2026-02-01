@@ -8,11 +8,11 @@ use sqlx::{
 };
 use std::str::FromStr;
 
-pub async fn init_db(database_url: &str) -> Result<SqlitePool> {
+pub async fn init_db(database_url: &str, max_connections: u32) -> Result<SqlitePool> {
     let options = SqliteConnectOptions::from_str(database_url)?.create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_connections)
         .connect_with(options)
         .await?;
 
