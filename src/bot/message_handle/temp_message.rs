@@ -1,8 +1,8 @@
 use anyhow::Result;
-use log::info;
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::TempMessage;
 use std::sync::Arc;
+use tracing::info;
 
 #[derive(Clone)]
 pub struct TempMessageHandler {

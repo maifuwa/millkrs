@@ -19,6 +19,8 @@ pub struct BotConfig {
     pub event_channel_capacity: usize,
     #[serde(default = "default_max_concurrent_tasks")]
     pub max_concurrent_tasks: usize,
+    #[serde(default = "default_agent_task_channel_capacity")]
+    pub agent_task_channel_capacity: usize,
 }
 
 fn default_event_channel_capacity() -> usize {
@@ -27,6 +29,10 @@ fn default_event_channel_capacity() -> usize {
 
 fn default_max_concurrent_tasks() -> usize {
     50
+}
+
+fn default_agent_task_channel_capacity() -> usize {
+    100
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,6 +75,7 @@ impl Config {
                 access_token: "your-access-token".to_string(),
                 event_channel_capacity: default_event_channel_capacity(),
                 max_concurrent_tasks: default_max_concurrent_tasks(),
+                agent_task_channel_capacity: default_agent_task_channel_capacity(),
             },
             llm: LLMConfig {
                 base_url: "your-model-base-url".to_string(),

@@ -1,5 +1,7 @@
-pub mod model;
-pub mod service;
+pub mod scheduler_model;
+pub mod scheduler_service;
+pub mod user_model;
+pub mod user_service;
 
 use anyhow::Result;
 use sqlx::{
@@ -31,7 +33,7 @@ pub async fn init_db(database_url: &str, max_connections: u32) -> Result<SqliteP
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY NOT NULL,
             name TEXT NOT NULL,
-            relation TEXT NOT NULL DEFAULT 'friend' CHECK(relation IN ('master', 'friend', 'stranger')),
+            relation TEXT NOT NULL DEFAULT 'guest' CHECK(relation IN ('master', 'guest', 'stranger')),
             custom_prompt TEXT,
             created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -48,6 +50,40 @@ pub async fn init_db(database_url: &str, max_connections: u32) -> Result<SqliteP
         FOR EACH ROW
         BEGIN
             UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
+        END
+        "#,
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS scheduled_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+            frequency TEXT NOT NULL CHECK(frequency IN ('once', 'daily')),
+            cron_expr TEXT NOT NULL,
+            target_user_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            created_by TEXT NOT NULL DEFAULT 'user' CHECK(created_by IN ('system', 'user')),
+            enabled INTEGER NOT NULL DEFAULT 1,
+            last_run_at DATETIME,
+            next_run_at DATETIME,
+            created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (target_user_id) REFERENCES users(id)
+        )
+        "#,
+    )
+    .execute(&pool)
+    .await?;
+
+    sqlx::query(
+        r#"
+        CREATE TRIGGER IF NOT EXISTS update_scheduled_tasks_timestamp
+        AFTER UPDATE ON scheduled_tasks
+        FOR EACH ROW
+        BEGIN
+            UPDATE scheduled_tasks SET updated_at = CURRENT_TIMESTAMP WHERE id = NEW.id;
         END
         "#,
     )

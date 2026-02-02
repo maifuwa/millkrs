@@ -1,5 +1,5 @@
 use crate::agent::Agent;
-use crate::db::model::User;
+use crate::db::user_model::User;
 use anyhow::Result;
 use std::sync::Arc;
 

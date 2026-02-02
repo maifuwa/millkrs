@@ -5,6 +5,7 @@ use rig::tool::Tool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
+use tracing::debug;
 
 #[derive(Deserialize)]
 pub struct SendMessageArgs {
@@ -63,6 +64,11 @@ impl Tool for SendMessage {
     }
 
     async fn call(&self, args: Self::Args) -> Result<Self::Output, Self::Error> {
+        debug!(
+            "[Tool] send_message called: user_id={}, message_count={}",
+            args.user_id,
+            args.messages.len()
+        );
         let mut sent_count = 0;
 
         for msg in args.messages {
@@ -75,6 +81,11 @@ impl Tool for SendMessage {
             {
                 Ok(_) => sent_count += 1,
                 Err(e) => {
+                    debug!(
+                        "[Tool] send_message failed at message {}: {}",
+                        sent_count + 1,
+                        e
+                    );
                     return Err(SendMessageError(format!(
                         "发送第{}条消息失败: {}",
                         sent_count + 1,
@@ -84,6 +95,7 @@ impl Tool for SendMessage {
             }
         }
 
+        debug!("[Tool] send_message completed: sent_count={}", sent_count);
         Ok(SendMessageResult {
             success: true,
             sent_count,

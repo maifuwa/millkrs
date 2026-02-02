@@ -1,5 +1,5 @@
 use crate::agent::Agent;
-use crate::db::service::UserService;
+use crate::db::user_service::UserService;
 use anyhow::Result;
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::MessageEvent;

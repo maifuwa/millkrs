@@ -1,10 +1,10 @@
 use crate::agent::Agent;
-use crate::db::service::UserService;
+use crate::db::user_service::UserService;
 use anyhow::Result;
-use log::warn;
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::{Event, EventKind};
 use std::sync::Arc;
+use tracing::warn;
 
 use super::message_handle::MessageHandler;
 

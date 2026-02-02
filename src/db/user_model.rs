@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "lowercase")]
 pub enum UserRelation {
     Master,
-    Friend,
+    Guest,
     Stranger,
 }
 
@@ -13,7 +13,7 @@ impl UserRelation {
     pub fn as_str(&self) -> &str {
         match self {
             UserRelation::Master => "master",
-            UserRelation::Friend => "friend",
+            UserRelation::Guest => "guest",
             UserRelation::Stranger => "stranger",
         }
     }
@@ -21,7 +21,7 @@ impl UserRelation {
     pub fn from_str(s: &str) -> Result<Self> {
         match s {
             "master" => Ok(UserRelation::Master),
-            "friend" => Ok(UserRelation::Friend),
+            "guest" => Ok(UserRelation::Guest),
             "stranger" => Ok(UserRelation::Stranger),
             _ => Err(anyhow!("无效的用户关系类型: {}", s)),
         }

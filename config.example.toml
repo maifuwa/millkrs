@@ -3,6 +3,7 @@
 endpoint = "wss://your-bot-endpoint"
 access_token = "your-access-token"
 event_channel_capacity = 100
+agent_task_channel_capacity = 100
 max_concurrent_tasks = 50
 
 # AI 模型配置

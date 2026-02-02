@@ -1,12 +1,12 @@
 use crate::agent::Agent;
-use crate::db::model::CreateUserRequest;
-use crate::db::service::UserService;
+use crate::db::user_model::CreateUserRequest;
+use crate::db::user_service::UserService;
 use anyhow::Result;
-use log::error;
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::FriendMessage;
 use milky_rust_sdk::utils::get_plain_text_from_segments;
 use std::sync::Arc;
+use tracing::error;
 
 use friend_chat::FriendChatHandler;
 use friend_command::FriendCommandHandler;
@@ -48,7 +48,7 @@ impl FriendMessageHandler {
 
         let text_content = get_plain_text_from_segments(&msg.message.segments);
 
-        if text_content.starts_with('/') {
+        if text_content.starts_with('#') {
             self.command_handler.handle(user.id, &text_content).await?;
         } else {
             self.chat_handler.handle(&user, &text_content).await?;

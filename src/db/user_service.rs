@@ -1,8 +1,8 @@
 use anyhow::{Result, anyhow};
-use log::debug;
 use sqlx::SqlitePool;
+use tracing::debug;
 
-use super::model::{
+use super::user_model::{
     CreateCustomPromptRequest, CreateMasterRequest, CreateUserRequest, UpdateUserRequest, User,
     UserRelation,
 };
@@ -28,7 +28,7 @@ impl UserService {
         sqlx::query(
             r#"
             INSERT INTO users (id, name, relation)
-            VALUES (?, ?, 'friend')
+            VALUES (?, ?, 'guest')
             "#,
         )
         .bind(req.id)
@@ -63,7 +63,56 @@ impl UserService {
             .ok_or_else(|| anyhow!("更新用户为 master 后无法查询到用户"))
     }
 
-    async fn get_user(&self, user_id: i64) -> Result<Option<User>> {
+    pub async fn create_custom_prompt(&self, req: CreateCustomPromptRequest) -> Result<User> {
+        debug!(
+            "创建/更新自定义提示词: id={}, prompt_len={}",
+            req.id,
+            req.custom_prompt.len()
+        );
+
+        let rows_affected = sqlx::query("UPDATE users SET custom_prompt = ? WHERE id = ?")
+            .bind(&req.custom_prompt)
+            .bind(req.id)
+            .execute(&self.pool)
+            .await?
+            .rows_affected();
+
+        if rows_affected == 0 {
+            return Err(anyhow!("用户 ID {} 不存在", req.id));
+        }
+
+        debug!("自定义提示词更新成功: id={}", req.id);
+
+        self.get_user(req.id)
+            .await?
+            .ok_or_else(|| anyhow!("更新自定义提示词后无法查询到用户"))
+    }
+
+    pub async fn update_user(&self, req: UpdateUserRequest) -> Result<User> {
+        debug!(
+            "更新用户请求: operator_id={}, user_id={}, relation={:?}",
+            req.operator_id, req.user_id, req.relation
+        );
+
+        if !self.is_master(req.operator_id).await? {
+            debug!("操作者不是 master，无权限修改用户关系");
+            return Err(anyhow!("只有 master 用户才能修改用户关系"));
+        }
+
+        sqlx::query("UPDATE users SET relation = ? WHERE id = ?")
+            .bind(req.relation.as_str())
+            .bind(req.user_id)
+            .execute(&self.pool)
+            .await?;
+
+        debug!("用户更新成功: user_id={}", req.user_id);
+
+        self.get_user(req.user_id)
+            .await?
+            .ok_or_else(|| anyhow!("更新用户后无法查询到用户"))
+    }
+
+    pub async fn get_user(&self, user_id: i64) -> Result<Option<User>> {
         debug!("查询用户: id={}", user_id);
 
         let row = sqlx::query_as::<_, (i64, String, String, Option<String>, String, String)>(
@@ -100,55 +149,6 @@ impl UserService {
         }
     }
 
-    pub async fn update_user(&self, req: UpdateUserRequest) -> Result<User> {
-        debug!(
-            "更新用户请求: operator_id={}, user_id={}, relation={:?}",
-            req.operator_id, req.user_id, req.relation
-        );
-
-        if !self.is_master(req.operator_id).await? {
-            debug!("操作者不是 master，无权限修改用户关系");
-            return Err(anyhow!("只有 master 用户才能修改用户关系"));
-        }
-
-        sqlx::query("UPDATE users SET relation = ? WHERE id = ?")
-            .bind(req.relation.as_str())
-            .bind(req.user_id)
-            .execute(&self.pool)
-            .await?;
-
-        debug!("用户更新成功: user_id={}", req.user_id);
-
-        self.get_user(req.user_id)
-            .await?
-            .ok_or_else(|| anyhow!("更新用户后无法查询到用户"))
-    }
-
-    pub async fn create_custom_prompt(&self, req: CreateCustomPromptRequest) -> Result<User> {
-        debug!(
-            "创建/更新自定义提示词: id={}, prompt_len={}",
-            req.id,
-            req.custom_prompt.len()
-        );
-
-        let rows_affected = sqlx::query("UPDATE users SET custom_prompt = ? WHERE id = ?")
-            .bind(&req.custom_prompt)
-            .bind(req.id)
-            .execute(&self.pool)
-            .await?
-            .rows_affected();
-
-        if rows_affected == 0 {
-            return Err(anyhow!("用户 ID {} 不存在", req.id));
-        }
-
-        debug!("自定义提示词更新成功: id={}", req.id);
-
-        self.get_user(req.id)
-            .await?
-            .ok_or_else(|| anyhow!("更新自定义提示词后无法查询到用户"))
-    }
-
     async fn is_master(&self, user_id: i64) -> Result<bool> {
         debug!("检查是否为 master: id={}", user_id);
 
@@ -176,5 +176,34 @@ impl UserService {
 
         debug!("master 存在检查结果: {}", result);
         Ok(result)
+    }
+
+    pub async fn get_all_users(&self) -> Result<Vec<User>> {
+        debug!("查询所有用户");
+
+        let rows = sqlx::query_as::<_, (i64, String, String, Option<String>, String, String)>(
+            r#"
+            SELECT id, name, relation, custom_prompt, created_at, updated_at
+            FROM users
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut users = Vec::new();
+        for (id, name, relation_str, custom_prompt, created_at, updated_at) in rows {
+            let relation = UserRelation::from_str(&relation_str)?;
+            users.push(User {
+                id,
+                name,
+                relation,
+                custom_prompt,
+                created_at,
+                updated_at,
+            });
+        }
+
+        debug!("查询到 {} 个用户", users.len());
+        Ok(users)
     }
 }

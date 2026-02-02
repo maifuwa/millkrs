@@ -3,15 +3,15 @@ mod message_handle;
 
 use crate::agent::Agent;
 use crate::config::BotConfig;
-use crate::db::service::UserService;
+use crate::db::user_service::UserService;
 use anyhow::{Result, bail};
 use event_handle::Handler;
-use log::{debug, error, info};
 use milky_rust_sdk::MilkyClient;
 use milky_rust_sdk::prelude::Event;
 use std::sync::Arc;
 use tokio::sync::{Semaphore, mpsc, oneshot};
 use tokio::task::{JoinHandle, JoinSet};
+use tracing::{debug, error, info};
 
 pub struct Bot {
     client: Arc<MilkyClient>,

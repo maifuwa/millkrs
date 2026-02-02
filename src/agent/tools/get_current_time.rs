@@ -3,6 +3,7 @@ use rig::completion::ToolDefinition;
 use rig::tool::Tool;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::debug;
 
 #[derive(Deserialize)]
 pub struct GetCurrentTimeArgs {}
@@ -37,10 +38,13 @@ impl Tool for GetCurrentTime {
     }
 
     async fn call(&self, _args: Self::Args) -> Result<Self::Output, Self::Error> {
+        debug!("[Tool] get_current_time called");
         let now = Local::now();
-        Ok(TimeResult {
+        let result = TimeResult {
             current_time: now.format("%Y-%m-%d %H:%M:%S").to_string(),
             timestamp: now.timestamp(),
-        })
+        };
+        debug!("[Tool] get_current_time completed: {}", result.current_time);
+        Ok(result)
     }
 }
