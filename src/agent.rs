@@ -7,10 +7,10 @@ use anyhow::Result;
 use milky_rust_sdk::MilkyClient;
 use rig::agent::AgentBuilder;
 use rig::client::CompletionClient;
-use rig::completion::Chat;
+use rig::completion::{Chat};
 use rig::providers::openai;
 use std::sync::Arc;
-use tools::{CreateScheduledTask, GetCurrentTime, SendMessage};
+use tools::{CreateScheduledTask, GetCurrentTime, SendMessage, WebSearch};
 
 pub struct AgentTask {
     pub target_user_id: i64,
@@ -20,8 +20,6 @@ pub struct AgentTask {
 pub struct Agent {
     agent: rig::agent::Agent<openai::CompletionModel>,
 }
-
-const MAX_TOOL_DEPTH: usize = 5;
 
 impl Agent {
     pub fn new(
@@ -40,11 +38,12 @@ impl Agent {
 
         let agent = AgentBuilder::new(model)
             .preamble(&system_prompt)
+            .default_max_depth(5)
             .temperature(config.temperature)
-            .default_max_depth(MAX_TOOL_DEPTH)
             .tool(GetCurrentTime)
             .tool(SendMessage::new(client))
             .tool(CreateScheduledTask::new(scheduler_manager))
+            .tool(WebSearch::new())
             .build();
 
         Ok(Self { agent })
@@ -54,7 +53,7 @@ impl Agent {
         let relation_str = user.relation.as_str();
 
         let mut prompt = format!(
-            "User Info:\n- User ID: {}\n- Name: {}\n- Relation: {}\n",
+            "Info:\n- ID: {}\n- Name: {}\n- Relation: {}\n",
             user.id, user.name, relation_str
         );
 
@@ -62,8 +61,7 @@ impl Agent {
             prompt.push_str(&format!("- Custom Prompt: {}\n", custom_prompt));
         }
 
-        prompt.push_str(&format!("\nUser Message: {}\n\n", message));
-        prompt.push_str("请使用 send_message 工具回复用户的消息");
+        prompt.push_str(&format!("\ncontent: {}", message));
 
         let _response: String = self.agent.chat(&prompt, vec![]).await?;
         Ok(())

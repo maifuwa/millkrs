@@ -42,7 +42,7 @@ impl Tool for SendMessage {
     async fn definition(&self, _prompt: String) -> ToolDefinition {
         ToolDefinition {
             name: Self::NAME.to_string(),
-            description: "发送一条或多条消息给用户。可以用于主动与用户聊天、分多次回复长内容、或者在执行任务过程中向用户报告进度。messages参数是一个字符串数组，每个字符串会作为单独的一条消息发送。".to_string(),
+            description: "发送一条或多条消息给用户。messages参数是一个字符串数组，每个字符串会作为单独的一条消息发送。\n\n重要规则：\n1. 每次互动必须调用此工具与用户互动\n2. 每次互动只能调用一次此工具".to_string(),
             parameters: json!({
                 "type": "object",
                 "properties": {

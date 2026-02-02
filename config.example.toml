@@ -14,10 +14,6 @@ model_name = "your-model-name"
 temperature = 0.7
 system_prompt = "system_prompt"
 
-# 搜索配置
-[search]
-serpapi_key = "your-serpapi-key"
-
 # 数据库配置
 [database]
 url = "sqlite://data.db"

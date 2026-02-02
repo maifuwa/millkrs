@@ -7,7 +7,6 @@ use std::path::Path;
 pub struct Config {
     pub bot: BotConfig,
     pub llm: LLMConfig,
-    pub search: SearchConfig,
     pub database: DatabaseConfig,
 }
 
@@ -52,11 +51,6 @@ impl LLMConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SearchConfig {
-    pub serpapi_key: String,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DatabaseConfig {
     pub url: String,
     #[serde(default = "default_max_connections")]
@@ -83,9 +77,6 @@ impl Config {
                 model_name: "your-model-name".to_string(),
                 temperature: 0.7,
                 system_prompt: "system_prompt".to_string(),
-            },
-            search: SearchConfig {
-                serpapi_key: "your-serpapi-key".to_string(),
             },
             database: DatabaseConfig {
                 url: "sqlite://data.db".to_string(),
